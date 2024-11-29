@@ -1,0 +1,138 @@
+---
+# config without config-map (directly using env-vars)
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: postgres
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: postgres
+#  template:
+#    metadata:
+#      labels:
+#        app: postgres
+#    spec:
+#      containers:
+#        - name: postgres
+#          image: postgres:latest
+#          imagePullPolicy: "IfNotPresent"
+#          ports:
+#            - containerPort: 5432
+#          env:
+#            - name: POSTGRES_DB
+#              value: mydb
+#            - name: POSTGRES_USER
+#              value: demo
+#            - name: POSTGRES_PASSWORD
+#              value: demo
+#          volumeMounts:
+#            - name: postgresql-data-vol
+#              mountPath: /var/lib/postgresql/data
+#      volumes:
+#        - name: postgresql-data-vol
+#          hostPath:
+#            path: /host-data/postgresql/data
+
+#          persistentVolumeClaim:
+#            claimName: postgres-pv-claim
+
+#          hostPath:
+#            path: /host-data/postgresql/data
+
+#          envFrom:
+#            - configMapRef:
+#                name: postgres-config
+#          volumeMounts:
+#            - mountPath: /var/lib/postgresql/data
+#              name: postgredb
+#      volumes:
+#        - name: postgredb
+#          persistentVolumeClaim:
+#            claimName: postgres-pv-claim
+
+---
+# config USING config-map (for DB connection params)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:latest
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          env:
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: POSTGRES_DB
+
+            - name: DB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: POSTGRES_USER
+
+            - name: DB_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: postgresql-data-vol
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgresql-data-vol
+          hostPath:
+            path: /host-data/postgresql/data
+---
+#Configure service for postgresql pod
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  clusterIP: None
+
+  # Define a 'Service' To Expose postgresql to Other Services
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: postgres-svc  # DNS name
+#  labels:
+#    app: postgres-svc
+#spec:
+#  selector: # mysql Pod Should contain same labels
+#    app: postgres
+#  ports:
+#    - protocol: TCP
+#      port: 8081
+#      targetPort: 5432
+#  type: LoadBalancer
+
+#  ports:
+#    - port: 5432
+#      targetPort: 5432
+#  type: NodePort
+
+#  clusterIP: None  # We Use DNS, Thus ClusterIP is not relevant

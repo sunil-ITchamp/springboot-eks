@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skapp1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skapp1
+  template:
+    metadata:
+      labels:
+        app: skapp1
+    spec:
+      containers:
+        - name: skapp1
+          image: spring-boot-eks:latest
+#          image: docker.io/khatri27/spring-boot-eks:latest
+#          904233115749.dkr.ecr.us-east-2.amazonaws.com/springboot-eks
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8087
+          env:
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: POSTGRES_DB
+
+            - name: DB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: POSTGRES_USER
+
+            - name: DB_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: POSTGRES_PASSWORD
+
+#      imagePullSecrets:
+#        - name: dockerregcred
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skapp1-service
+spec:
+  selector:
+    app: skapp1
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8087
+  type: LoadBalancer

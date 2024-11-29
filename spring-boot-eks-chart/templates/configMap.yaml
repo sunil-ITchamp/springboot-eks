@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config-map
+  labels:
+    app: app
+data:
+  APP_DB_NAME: mydb
+  APP_DB_USERNAME: demo
+  APP_DB_PASSWORD: demo
